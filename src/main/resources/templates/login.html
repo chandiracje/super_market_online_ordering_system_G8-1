@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Login - Supermarket</title>
+</head>
+<body>
+<h2>Login</h2>
+
+<!-- Notifications & Errors -->
+<div th:if="${param.error}">
+    <p style="color: red;">
+        <!-- Prints specific errors like "Your email address is not verified yet." -->
+        <span th:if="${session.SPRING_SECURITY_LAST_EXCEPTION != null}"
+              th:text="${session.SPRING_SECURITY_LAST_EXCEPTION.message}">
+                  Invalid email or password.
+            </span>
+        <!-- Fallback if the exception message is null -->
+        <span th:unless="${session.SPRING_SECURITY_LAST_EXCEPTION != null}">
+                  Invalid email or password.
+            </span>
+    </p>
+</div>
+
+<div th:if="${param.success}">
+    <p style="color: green;">Registration successful! Please check your email to verify your account before logging in.</p>
+</div>
+
+<div th:if="${param.verified}">
+    <p style="color: green;">Email verified successfully! You can now log in.</p>
+</div>
+
+<div th:if="${param.logout}">
+    <p style="color: blue;">You have been successfully logged out.</p>
+</div>
+
+<!-- Login Form -->
+<form th:action="@{/login}" method="post">
+    <div>
+        <label>Email:</label>
+        <!-- Name MUST be 'username' to match SecurityConfig -->
+        <input type="email" name="username" required autofocus />
+    </div>
+    <div>
+        <label>Password:</label>
+        <!-- Name MUST be 'password' to match SecurityConfig -->
+        <input type="password" name="password" required />
+    </div>
+    <button type="submit">Login</button>
+</form>
+
+<p>Don't have an account? <a th:href="@{/register}">Register here</a></p>
+</body>
+</html>

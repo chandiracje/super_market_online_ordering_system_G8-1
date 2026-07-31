@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Supermarket Storefront</title>
+    <style>
+        /* Base Reset & Styling */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
+
+        /* Navigation Bar Architecture */
+        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #1e293b; padding: 12px 24px; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-left, .nav-right, .nav-center { display: flex; align-items: center; gap: 20px; }
+        .navbar a { color: #f8fafc; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .navbar a:hover { color: #38bdf8; }
+
+        /* Interactive Dropdown Patterns */
+        .dropdown { position: relative; display: inline-block; cursor: pointer; padding: 8px 0; }
+        .dropdown-trigger { display: flex; align-items: center; gap: 4px; font-weight: 500; }
+        .dropdown-content { display: none; position: absolute; background-color: #ffffff; min-width: 220px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); z-index: 100; top: 100%; left: 0; border-radius: 6px; padding: 6px 0; border: 1px solid #e2e8f0; }
+        .dropdown-content.profile-menu { right: 0; left: auto; }
+        .dropdown-content a, .dropdown-content button { color: #334155; padding: 10px 16px; text-decoration: none; display: block; border: none; background: none; width: 100%; text-align: left; font-size: 14px; box-sizing: border-box; cursor: pointer; }
+        .dropdown-content a:hover, .dropdown-content button:hover { background-color: #f1f5f9; color: #0284c7; }
+        .dropdown:hover .dropdown-content { display: block; }
+
+        /* Nested Subcategory Layout */
+        .subcategory-group { border-left: 2px solid #cbd5e1; margin-left: 16px; padding-left: 4px; background: #f8fafc; }
+        .subcategory-group a { color: #64748b !important; font-size: 13px !important; padding: 6px 12px !important; }
+        .subcategory-group a:hover { color: #0284c7 !important; }
+
+        /* Unified Search Bar */
+        .search-bar { display: flex; align-items: center; }
+        .search-bar input { padding: 9px 14px; width: 350px; border-radius: 6px 0 0 6px; border: 1px solid #cbd5e1; font-size: 14px; outline: none; }
+        .search-bar button { padding: 9px 16px; background-color: #0284c7; color: white; border: 1px solid #0284c7; border-radius: 0 6px 6px 0; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        .search-bar button:hover { background-color: #0369a1; }
+
+        /* Profile Dropdown Specific elements */
+        .logout-form { margin: 0; padding: 0; }
+        .logout-btn { color: #dc2626 !important; font-weight: 600; border-top: 1px solid #e2e8f0 !important; margin-top: 4px; padding-top: 12px !important; }
+
+        /* Storefront Canvas Layout */
+        .container { padding: 32px 24px; max-width: 1280px; margin: auto; }
+        .promo-banner { background: linear-gradient(135deg, #eab308, #ca8a04); color: white; padding: 20px; text-align: center; border-radius: 8px; font-weight: bold; font-size: 1.25em; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 32px; }
+        .section-title { border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 40px; margin-bottom: 20px; color: #0f172a; font-size: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Dynamic Grid Layout */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+        .product-card { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .product-card h4 { margin: 12px 0 6px 0; font-size: 1.1rem; color: #1e293b; }
+        .product-card p { margin: 0 0 12px 0; font-size: 0.9rem; color: #64748b; flex-grow: 1; }
+        .price-container { margin-bottom: 16px; }
+        .original-price { font-weight: 600; font-size: 1.2rem; color: #0f172a; }
+        .original-price.slashed { text-decoration: line-through; color: #94a3b8; font-size: 0.95rem; margin-right: 8px; }
+        .discount-price { font-weight: 700; font-size: 1.25rem; color: #dc2626; }
+
+        .add-to-cart-btn { width: 100%; padding: 10px; background-color: #22c55e; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .add-to-cart-btn:hover { background-color: #16a34a; }
+        .out-of-stock-btn { width: 100%; padding: 10px; background-color: #e2e8f0; color: #94a3b8; border: none; border-radius: 6px; font-weight: 600; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<!-- Main Dynamic Navigation Interface -->
+<nav class="navbar">
+    <div class="nav-left">
+        <h2><a th:href="@{/}">SuperMarket</a></h2>
+
+        <!-- Category & Nested Subcategory Navigation Structure -->
+        <div class="dropdown">
+            <span class="dropdown-trigger">Categories ▾</span>
+            <div class="dropdown-content">
+                <div th:each="cat : ${categories}">
+                    <!-- Root Category Entry -->
+                    <a th:href="@{/category/{id}(id=${cat.id})}" th:text="${cat.name}" style="font-weight: 600; background-color: #f8fafc;">Category</a>
+
+                    <!-- Inline Subcategory Render Context -->
+                    <div class="subcategory-group" th:if="${cat.subCategories != null and !cat.subCategories.isEmpty()}">
+                        <a th:each="sub : ${cat.subCategories}"
+                           th:href="@{/category/{id}(id=${sub.id})}"
+                           th:text="${sub.name}">Subcategory</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Product Query Form -->
+    <div class="nav-center">
+        <form class="search-bar" th:action="@{/search}" method="get">
+            <input type="text" name="query" placeholder="Search for items, brands, or essentials..." required>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <!-- Secured Profile, Session Handling, and Status Action Set -->
+    <div class="nav-right">
+        <a th:href="@{/orders/active}">📦 Active Orders</a>
+        <a th:href="@{/cart}">🛒 Cart</a>
+
+        <!-- Profile Submenu Module -->
+        <div class="dropdown">
+                <span class="dropdown-trigger">
+                    👤 <span sec:authentication="name">Customer</span> ▾
+                </span>
+            <div class="dropdown-content profile-menu">
+                <a th:href="@{/profile}">Profile Details</a>
+                <a th:href="@{/settings}">Account Settings</a>
+                <a th:href="@{/profile/address}">Default Shipping Address</a>
+                <a th:href="@{/orders/history}">Past Order History</a>
+
+                <!-- Secure Application Logout Handled via Form Post for CSRF Safety -->
+                <form th:action="@{/logout}" method="post" class="logout-form">
+                    <button type="submit" class="logout-btn">Log Out</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Content Workspace -->
+<main class="container">
+
+    <!-- Promotions Carousel/Banner System -->
+    <div class="promo-banner" th:if="${promotions != null and !promotions.isEmpty()}">
+        🔥 Active Promotions: Exclusive deals running now! Check out selected catalog marks below.
+    </div>
+    <div class="promo-banner" th:unless="${promotions != null and !promotions.isEmpty()}">
+        🎉 Welcome to Supermarket! Enjoy fresh inventory items dispatched daily straight to your door.
+    </div>
+
+    <!-- Dynamic Promotions Grid Block -->
+    <div th:if="${promotions != null and !promotions.isEmpty()}">
+        <h3 class="section-title">Promotions Going On</h3>
+        <div class="product-grid">
+            <div class="product-card" th:each="prod : ${promotions}">
+                <div>
+                    <h4 th:text="${prod.name}">Promoted Item Name</h4>
+                    <p th:text="${prod.description}">Description context string</p>
+                </div>
+                <div>
+                    <div class="price-container">
+                        <!-- Show alternative layout if discount price field mapping exists -->
+                        <span th:if="${prod.discountPrice != null}" class="original-price slashed" th:text="'$' + ${prod.price}">$0.00</span>
+                        <span th:if="${prod.discountPrice != null}" class="discount-price" th:text="'$' + ${prod.discountPrice}">$0.00</span>
+                        <span th:if="${prod.discountPrice == null}" class="original-price" th:text="'$' + ${prod.price}">$0.00</span>
+                    </div>
+                    <button th:if="${prod.stockQuantity > 0}" class="add-to-cart-btn">Add to Cart</button>
+                    <button th:unless="${prod.stockQuantity > 0}" class="out-of-stock-btn">Out of Stock</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Newest Arrivals Track Section -->
+    <h3 class="section-title">Newest Arrivals</h3>
+    <div class="product-grid">
+        <div class="product-card" th:each="prod : ${newArrivals}">
+            <div>
+                <h4 th:text="${prod.name}">Fresh Item Name</h4>
+                <p th:text="${prod.description}">Description context string</p>
+            </div>
+            <div>
+                <div class="price-container">
+                    <span th:class="${prod.discountPrice != null} ? 'original-price slashed' : 'original-price'" th:text="'$' + ${prod.price}">$0.00</span>
+                    <span th:if="${prod.discountPrice != null}" class="discount-price" th:text="'$' + ${prod.discountPrice}">$0.00</span>
+                </div>
+                <button th:if="${prod.stockQuantity > 0}" class="add-to-cart-btn">Add to Cart</button>
+                <button th:unless="${prod.stockQuantity > 0}" class="out-of-stock-btn">Out of Stock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comprehensive Product List Segment -->
+    <h3 class="section-title">All Available Products</h3>
+    <div class="product-grid">
+        <div class="product-card" th:each="prod : ${allProducts}">
+            <div>
+                <h4 th:text="${prod.name}">Standard Item Name</h4>
+                <p th:text="${prod.description}">Description context string</p>
+            </div>
+            <div>
+                <div class="price-container">
+                    <span th:class="${prod.discountPrice != null} ? 'original-price slashed' : 'original-price'" th:text="'$' + ${prod.price}">$0.00</span>
+                    <span th:if="${prod.discountPrice != null}" class="discount-price" th:text="'$' + ${prod.discountPrice}">$0.00</span>
+                </div>
+                <button th:if="${prod.stockQuantity > 0}" class="add-to-cart-btn">Add to Cart</button>
+                <button th:unless="${prod.stockQuantity > 0}" class="out-of-stock-btn">Out of Stock</button>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>
